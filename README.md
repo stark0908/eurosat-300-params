@@ -1,6 +1,6 @@
 # Solving EuroSAT with Fewer Than 306 Parameters: A 297-Parameter Pure Affine Model
 
-- **Author**: Stark & Antigravity (Google DeepMind Pair Programming Suite)
+- **Author**: Stark
 - **Date**: September 2026
 - **Original Research & Challenge**: Caleb Robinson, Isaac Corley, and Nils Lehmann ([Blog Post](https://geospatialml.com/posts/eurosat-min-params/) | [GitHub Repository](https://github.com/calebrob6/eurosat-min-params))
 - **Code Suite**: [`code/`](./code/)
@@ -9,7 +9,7 @@
 
 ---
 
-# Part I: The 1-Minute Read
+## Summary
 
 In [Solving EuroSAT with as Few Parameters as Possible](https://geospatialml.com/posts/eurosat-min-params/), Caleb Robinson, Isaac Corley, and Nils Lehmann demonstrated that a multinomial logistic regression head trained on 33 fixed spectral and spatial measurements reaches 96.04% test accuracy on EuroSAT with 306 learned parameters. They challenged the community:
 
@@ -19,53 +19,53 @@ We find that it can be beaten. We present two solutions that break the 306-param
 
 | Model Configuration | Input Features ($F$) | Stored Parameters | Inference Architecture | Test Accuracy | Status vs. 96.04% |
 |---|---|---|---|---|---|
-| **Author Published Baseline** | 33 | 306 | 1 Affine Map ($\mathbf{x} W^T + \mathbf{b}$) | 96.04% | Baseline |
-| **Ours: Pure Folded Affine** | 32 | **297** | 1 Affine Map ($\mathbf{x} W^T + \mathbf{b}$) | **96.19%** | **+0.15% (Strict Author Rules)** |
-| **Ours: Power-Conditioned (YJ)** | 32 | 297* | Yeo-Johnson + Linear Head | **96.25%** | **+0.21%** |
-| **Ours: Sub-280 Frontier (YJ)** | 29 | 270* | Yeo-Johnson + Linear Head | **96.06%** | **+0.02% (Sub-280)** |
+| **Author Baseline** | 33 | 306 | 1 Affine Map ($\mathbf{x} W^T + \mathbf{b}$) | 96.04% | Baseline |
+| **297-Parameter Folded Affine** | 32 | **297** | 1 Affine Map ($\mathbf{x} W^T + \mathbf{b}$) | **96.19%** | **+0.15%** |
+| **297-Parameter Yeo-Johnson** | 32 | 297* | Yeo-Johnson + Linear Head | **96.25%** | **+0.21%** |
+| **270-Parameter Yeo-Johnson** | 29 | 270* | Yeo-Johnson + Linear Head | **96.06%** | **+0.02%** |
 
-*\* Note: The Pure Folded Affine model uses strictly 297 stored numbers with zero extra operations. The Power-Conditioned model requires storing 32 fixed power exponents $\lambda_j$ (329 total values).*
+*\* The Folded Affine model stores exactly 297 numbers with no extra operations at inference. The Yeo-Johnson model additionally stores 32 power exponents (329 total values).*
 
-### Why the 306-Parameter Ceiling Existed
-The authors used greedy backward elimination from 33 features down to 20. At the $33 \to 32$ step, cross-validation dropped `grad_mean_B05`, causing test accuracy to immediately collapse to 95.89%. They concluded that 33 was the minimal feature set above 96.00%.
+### Why Greedy Elimination Stopped at 33 Features
+The authors used greedy backward elimination from 33 features down to 20. At the $33 \to 32$ step, cross-validation dropped `grad_mean_B05`, causing test accuracy to fall to 95.89%. They concluded that 33 was the minimal feature set above 96.00%.
 
-However, greedy backward elimination makes irrevocable local choices. By running an exhaustive 33-configuration leave-one-out study, we discovered that dropping `orient_entropy_s1_B02` (a noisy multi-scale orientation feature with extreme kurtosis) eliminates boundary torque and improves test accuracy to **96.19%** while reducing parameters from 306 to **297** ($9 \times 33$).
+However, greedy backward elimination makes irrevocable local choices. Running an exhaustive leave-one-out study over all 33 features shows that dropping `orient_entropy_s1_B02` (a noisy multi-scale orientation feature with high kurtosis) improves test accuracy to **96.19%** while reducing parameters from 306 to **297**.
 
-Crucially, under the authors' exact deployment rules:
-1. Feature standardization is 100% algebraically folded into the weights and bias.
+Under the authors' exact deployment rules:
+1. Feature standardization is algebraically folded into the weights and bias.
 2. Inference is a single affine map on raw features: $\text{logits} = \mathbf{x}_{\text{raw}} W^T + \mathbf{b}$.
-3. Exactly 297 floating-point values are stored, with zero extra transforms or runtime overhead.
+3. Exactly 297 floating-point values are stored, with no extra transforms or runtime overhead.
 
-### 10 Pure 297-Parameter Models Meeting or Beating the Benchmark
+### 10 32-Feature Models Meeting or Exceeding the Baseline
 
-Under the author's exact method (pure folded affine with zero runtime preprocessing), 10 distinct 32-feature models meet or beat the author's published 96.04% baseline:
+Under the author's exact method (folded affine, no preprocessing), 10 distinct 32-feature models meet or exceed the published 96.04% baseline:
 
 | Rank | Omitted Feature | Parameters ($P$) | Test Accuracy | Status vs. 96.04% Baseline |
 |---|---|---|---|---|
-| **1** | **`orient_entropy_s1_B02`** | **297** | **96.19%** | **+0.15% (New SOTA)** |
+| **1** | **`orient_entropy_s1_B02`** | **297** | **96.19%** | **+0.15%** |
 | **2** | `orient_entropy_B03` | 297 | **96.09%** | +0.05% |
 | **3** | `grad_mean_ndbi` | 297 | **96.07%** | +0.03% |
 | **4** | `lbp_uniform_ndbi` | 297 | **96.06%** | +0.02% |
 | **5** | `grad_mean_s2_B02` | 297 | **96.06%** | +0.02% |
 | **6** | `grad_mean_nbr` | 297 | **96.06%** | +0.02% |
 | **7** | `p75_B04` | 297 | **96.06%** | +0.02% |
-| **8** | `grad_mean_B04` | 297 | **96.04%** | 0.00% (Equals baseline) |
-| **9** | `grad_mean_s2_B03` | 297 | **96.04%** | 0.00% (Equals baseline) |
-| **10** | `p75_B11` | 297 | **96.04%** | 0.00% (Equals baseline) |
+| **8** | `grad_mean_B04` | 297 | **96.04%** | 0.00% |
+| **9** | `grad_mean_s2_B03` | 297 | **96.04%** | 0.00% |
+| **10** | `p75_B11` | 297 | **96.04%** | 0.00% |
 
-*Removing any of these 10 features beats or equals the authors' 33-feature score.*
+*Removing any of these 10 features meets or exceeds the authors' 33-feature score.*
 
 ![Figure 1: Pareto Frontier](./figures/pareto_frontier_sub306.png)
 
-*Figure 1: EuroSAT Parameter Minimization Pareto Frontier. Test accuracy across inference parameter counts. The pure folded affine model achieves 96.19% with strictly 297 parameters under the author's rules. Power conditioning reaches 96.25% at 297 parameters and 96.06% at 270 parameters.*
+*Figure 1: Test accuracy vs. inference parameter count. The folded affine model achieves 96.19% with 297 parameters under the author's rules. Yeo-Johnson reaches 96.25% at 297 parameters and 96.06% at 270 parameters.*
 
 ![Figure 2: Confusion Matrices Comparison](./figures/confusion_matrices_comparison.png)
 
-*Figure 2: Empirical confusion matrices across all 5,400 test patches. (Left) Baseline 33-feature model (220 errors, 95.93% accuracy). (Middle) Ours 32-feature model (203 errors, 96.24% accuracy). (Right) Off-diagonal error shift matrix showing error reductions across vegetation subclasses and curvilinear corridors.*
+*Figure 2: Confusion matrices across all 5,400 test patches. (Left) Baseline 33-feature model (220 errors, 95.93% accuracy). (Middle) 32-feature model (203 errors, 96.24% accuracy). (Right) Error shift matrix showing reductions across vegetation subclasses and linear corridors.*
 
 ---
 
-# Part II: The Complete Study & Evolution
+## Detailed Study
 
 ---
 
@@ -213,7 +213,7 @@ Under Gaussian class-conditional distributions, linear logistic regression bound
 Under the authors' deployment rules, no extra transforms are permitted at inference. The model must be a single affine map acting directly on raw features:
 $$\text{logits} = \mathbf{x}_{\text{raw}} W^{\text{deploy}T} + \mathbf{b}^{\text{deploy}}$$
 
-Evaluating all 33 leave-one-out models using the authors' exact `fit_folded_logreg` function revealed that dropping `orient_entropy_s1_B02` directly removes the heavy-tailed noise source that was torquing the linear decision boundary. The resulting 32-feature linear probe achieves **96.19% test accuracy**, saving 9 parameters while operating as a pure affine map with zero extra operations. In total, 10 distinct 32-feature subsets meet or beat the 96.04% baseline (detailed in Section 5).
+Evaluating all 33 leave-one-out models using the authors' exact `fit_folded_logreg` function showed that dropping `orient_entropy_s1_B02` removes the heavy-tailed feature that was distorting the linear decision boundary. The resulting 32-feature model achieves **96.19% test accuracy**, saving 9 parameters while operating as a pure affine map with no extra operations. In total, 10 distinct 32-feature subsets meet or exceed the 96.04% baseline (detailed in Section 5).
 
 ### Path B: Power-Conditioned Model (Yeo-Johnson)
 To compress heavy tails across all features simultaneously, we applied the parametric Yeo-Johnson power transformation:
@@ -226,10 +226,10 @@ $$\psi(\lambda, x) = \begin{cases}
 
 The scalar $\hat{\lambda}_j$ was estimated by maximizing profile log-likelihood on the training split.
 
-#### Empirical Results:
+#### Results:
 1. **32 Features (297 Classifier Parameters)**: Omitting `grad_mean_B05` under Yeo-Johnson achieves **96.25% test accuracy** (Val: 96.10%).
 2. **33 Features (306 Classifier Parameters)**: Swapping `grad_mean_B05` for `p10_B08` reaches **96.27% test accuracy** (peak single seed: **96.28%**).
-3. **29 Features (270 Classifier Parameters)**: Retaining 29 features under Yeo-Johnson maintains **96.06% test accuracy**, extending the $\ge 96.00\%$ frontier down to 270 parameters.
+3. **29 Features (270 Classifier Parameters)**: Retaining 29 features under Yeo-Johnson achieves **96.06% test accuracy**.
 
 #### Parameter Accounting Caveat:
 Because $\psi(\lambda, x)$ is a non-linear power function, it cannot be linearly folded into $W$ and $b$. Deploying this model requires storing 32 $\lambda$ exponents:
@@ -239,23 +239,23 @@ If strict compliance with the single affine map rule is required, Path A (96.19%
 
 ---
 
-## 5. Exhaustive 32-Feature Leave-One-Out Spectrum
+## 5. Exhaustive 32-Feature Leave-One-Out Study
 
-To map the stability of the 33 features, we evaluated all 33 possible 32-feature subsets under both Yeo-Johnson and StandardScaler:
+To map the effect of each feature, all 33 possible 32-feature subsets were evaluated under both Yeo-Johnson and StandardScaler:
 
 ![Figure 7: Leave-One-Out Ranking](./figures/leave_one_out_32_ranking.png)
 
-*Figure 7: Exhaustive 32-Feature Leave-One-Out Spectrum. Ranked test accuracy of all 33 subsets. Green bars indicate configurations meeting or exceeding the 96.00% benchmark (18 features under YJ). Red bars show configurations falling below 96.00% (15 features). Black points show the corresponding StandardScaler scores.*
+*Figure 7: Ranked test accuracy of all 33 leave-one-out subsets. Green bars meet or exceed 96.00% (18 configurations under Yeo-Johnson). Red bars fall below 96.00% (15 configurations). Black points show StandardScaler scores.*
 
 Here is the exact data showing which features, when removed, maintain $\ge 96.00\%$ test accuracy with 297 parameters:
 
-### 1. Under the Author's Exact Method (Pure Folded Affine / StandardScaler)
+### 1. Under the Author's Exact Method (Folded Affine / StandardScaler)
 
-10 distinct 32-feature models meet or beat the author's published 96.04% baseline with zero extra transforms:
+10 distinct 32-feature models meet or exceed the author's published 96.04% baseline with no extra transforms:
 
 | Rank | Omitted Feature | Parameters ($P$) | Test Accuracy | Status vs. 96.04% Baseline |
 |---|---|---|---|---|
-| **1** | **`orient_entropy_s1_B02`** | **297** | **96.19%** | **+0.15% (New SOTA)** |
+| **1** | **`orient_entropy_s1_B02`** | **297** | **96.19%** | **+0.15%** |
 | **2** | `orient_entropy_B03` | 297 | **96.09%** | +0.05% |
 | **3** | `grad_mean_ndbi` | 297 | **96.07%** | +0.03% |
 | **4** | `lbp_uniform_ndbi` | 297 | **96.06%** | +0.02% |
@@ -299,52 +299,51 @@ Here is the exact data showing which features, when removed, maintain $\ge 96.00
 
 ---
 
-## 6. Theoretical Limits & The Single-Date Bayes Bound
+## 6. Accuracy Ceiling Analysis
 
-Why does test accuracy saturate at ~96.28% rather than reaching 97.00% or 98.00%?
-1. **The Full-Pool Ceiling**: Fitting all 389 candidate features (3,510 parameters) yields **97.24% test accuracy**. Retaining $> 96.80\%$ accuracy requires at least 89 features (810 parameters).
-2. **Physical Ambiguity of Single-Acquisition Sentinel-2**: The remaining test errors are concentrated in subtle vegetative subclasses (`PermanentCrop` vs. `HerbaceousVegetation` vs. `AnnualCrop`). Single-date optical imagery has intrinsic spectral overlap among these classes; separating them definitively requires multi-temporal phenology (seasonal NDVI profiles) or narrow hyperspectral bands.
-3. **Conclusion**: For a single-date 13-band Sentinel-2 patch compressed into ~32 features, the Bayes optimal test accuracy is bounded near **96.3%**.
+Why does test accuracy stop improving around 96.28%?
+1. **Full-Feature Ceiling**: Using all 389 candidate features (3,510 parameters) yields **97.24% test accuracy**. Staying above 96.80% requires at least 89 features (810 parameters).
+2. **Spectral Ambiguity**: The remaining errors are concentrated in vegetative subclasses (`PermanentCrop` vs. `HerbaceousVegetation` vs. `AnnualCrop`). Single-date optical imagery has inherent spectral overlap between these classes; resolving them reliably would require multi-temporal observations or narrower spectral bands.
+3. **Practical limit**: For a single-date 13-band Sentinel-2 patch compressed into ~32 features, test accuracy is unlikely to exceed approximately **96.3%** with a linear model.
 
 ---
 
-## 7. Workspace Organization & Reproduction Guide
+## 7. Repository Structure & Reproduction
 
-All code, data loaders, evaluation scripts, and figure generators are consolidated in this workspace:
 
 ```
 eurosat-300-params/
-├── README.md                                             # This comprehensive publication report
+├── README.md                                             # This report
 │
-├── code/                                                 # Python & Bash execution suite
-│   ├── model.py                                          # 9-row zero-reference logistic regression
+├── code/                                                 # Python & Bash scripts
+│   ├── model.py                                          # Zero-reference logistic regression
 │   ├── transforms.py                                     # StandardScaler & YeoJohnsonTransform
-│   ├── ablation_32_leave_one_out.py                     # Exhaustive 33-configuration leave-one-out runner
+│   ├── ablation_32_leave_one_out.py                     # Exhaustive leave-one-out runner
 │   ├── benchmark_comparison.py                          # 33, 32, 31, 29 feature benchmark runner
-│   ├── generate_figures.py                              # Publication-grade PNG figure generator
-│   ├── fine_grained_pruning.py                          # Greedy backward elimination script (33 to 20)
-│   ├── runner.py                                        # Reconstruction & Feature-JEPA suite runner
-│   └── reproduce.sh                                     # Executable one-touch bash verification
+│   ├── generate_figures.py                              # Figure generator
+│   ├── fine_grained_pruning.py                          # Greedy backward elimination (33 to 20)
+│   ├── runner.py                                        # Reconstruction & Feature-JEPA runner
+│   └── reproduce.sh                                     # End-to-end reproduction script
 │
-├── figures/                                              # High-resolution (300 DPI) publication figures
-│   ├── pareto_frontier_sub306.png                        # Figure 1: Test Acc vs Inference Parameters
-│   ├── confusion_matrices_comparison.png                 # Figure 2: Empirical 10x10 confusion heatmaps
-│   ├── accuracy_vs_r2_tradeoff.png                       # Figure 3: Reconstruction R2 vs accuracy tradeoff
-│   ├── bottleneck_dimension_sweep.png                    # Figure 4: Latent bottleneck dimension sweep
-│   ├── family_reconstruction_r2.png                      # Figure 5: Feature family reconstruction breakdown
-│   ├── distribution_pathology_transforms.png             # Figure 6: Density plots before/after Yeo-Johnson
-│   └── leave_one_out_32_ranking.png                      # Figure 7: Ranked 32-feature bar spectrum
+├── figures/                                              # Figures
+│   ├── pareto_frontier_sub306.png                        # Figure 1: Test accuracy vs. parameters
+│   ├── confusion_matrices_comparison.png                 # Figure 2: Confusion matrices
+│   ├── accuracy_vs_r2_tradeoff.png                       # Figure 3: Reconstruction R2 vs. accuracy
+│   ├── bottleneck_dimension_sweep.png                    # Figure 4: Bottleneck dimension sweep
+│   ├── family_reconstruction_r2.png                      # Figure 5: Per-family reconstruction R2
+│   ├── distribution_pathology_transforms.png             # Figure 6: Distributions before/after Yeo-Johnson
+│   └── leave_one_out_32_ranking.png                      # Figure 7: Leave-one-out ranking
 │
-└── results/                                              # Raw CSV empirical evaluation logs
-    ├── leave_one_out_32_ablation.csv                     # Exhaustive 32-feature metrics
-    ├── benchmark_33_32_31_29.csv                         # Multi-scale 33, 32, 31, 29 comparisons
-    ├── fine_grained_pruning.csv                          # Fine-grained 1-by-1 pruning results
-    ├── all_experiments_results.csv                       # Full multi-task reconstruction sweep
+└── results/                                              # CSV evaluation logs
+    ├── leave_one_out_32_ablation.csv                     # 32-feature leave-one-out metrics
+    ├── benchmark_33_32_31_29.csv                         # 33, 32, 31, 29 feature comparisons
+    ├── fine_grained_pruning.csv                          # Feature pruning results
+    ├── all_experiments_results.csv                       # Multi-task reconstruction sweep
     ├── feature_family_reconstruction.csv                 # Per-family reconstruction metrics
-    └── r389_per_feature_r2.csv                           # Per-feature R2 scores across 389 features
+    └── r389_per_feature_r2.csv                           # Per-feature R2 across 389 features
 ```
 
-### Quick Reproduction Instructions
+### Reproduction
 
 ```bash
 # 1. Activate conda environment
@@ -354,6 +353,6 @@ conda activate torch
 cd /home/Stark/eurosat-300-params/code
 bash reproduce.sh
 
-# 3. Regenerate all publication figures
+# 3. Regenerate all figures
 python generate_figures.py
 ```
