@@ -3,10 +3,9 @@
 - **Author**: Stark & Antigravity (Google DeepMind Pair Programming Suite)
 - **Date**: September 2026
 - **Original Research & Challenge**: Caleb Robinson, Isaac Corley, and Nils Lehmann ([Blog Post](https://geospatialml.com/posts/eurosat-min-params/) | [GitHub Repository](https://github.com/calebrob6/eurosat-min-params))
-- **Workspace**: [`mohit/`](file:///home/Stark/eurosat-min-params/mohit/)
-- **Code Suite**: [`mohit/code/`](file:///home/Stark/eurosat-min-params/mohit/code/)
-- **Evaluation Logs**: [`mohit/results/`](file:///home/Stark/eurosat-min-params/mohit/results/)
-- **Figures**: [`mohit/figures/`](file:///home/Stark/eurosat-min-params/mohit/figures/)
+- **Code Suite**: [`code/`](./code/)
+- **Evaluation Logs**: [`results/`](./results/)
+- **Figures**: [`figures/`](./figures/)
 
 ---
 
@@ -135,7 +134,7 @@ Following the Joint-Embedding Predictive Architecture framework, we masked a sub
 
 ### 2.2 Empirical Results of Auxiliary Tasks
 
-We evaluated auxiliary weights $\lambda \in [10^{-4}, 1.0]$, linear and MLP decoders, and bottleneck dimensions $d \in [9, 128]$. The results from [`mohit/results/all_experiments_results.csv`](file:///home/Stark/eurosat-min-params/mohit/results/all_experiments_results.csv) are summarized below:
+We evaluated auxiliary weights $\lambda \in [10^{-4}, 1.0]$, linear and MLP decoders, and bottleneck dimensions $d \in [9, 128]$. The results from [`results/all_experiments_results.csv`](./results/all_experiments_results.csv) are summarized below:
 
 | Features ($F$) | Parameters ($P$) | Baseline ($\lambda = 0$) | $R_{33}$ Recon ($\lambda=0.01$) | $R_{389}$ Recon ($\lambda=0.01$) | $R_{389}$ Non-linear |
 |---|---|---|---|---|---|
@@ -296,7 +295,7 @@ Here is the exact data showing which features, when removed, maintain $\ge 96.00
 | **17** | `p75_B04` | 297 | **96.01%** | PASS (+0.01%) |
 | **18** | `p75_B01` | 297 | **96.01%** | PASS (+0.01%) |
 
-*(Note: The complete 33-configuration numerical ranking across both methods is logged in [`mohit/results/leave_one_out_32_ablation.csv`](file:///home/Stark/eurosat-min-params/mohit/results/leave_one_out_32_ablation.csv).)*
+*(Note: The complete 33-configuration numerical ranking across both methods is logged in [`results/leave_one_out_32_ablation.csv`](./results/leave_one_out_32_ablation.csv).)*
 
 ---
 
@@ -314,7 +313,7 @@ Why does test accuracy saturate at ~96.28% rather than reaching 97.00% or 98.00%
 All code, data loaders, evaluation scripts, and figure generators are consolidated in this workspace:
 
 ```
-mohit/
+eurosat-300-params/
 ├── README.md                                             # This comprehensive publication report
 │
 ├── code/                                                 # Python & Bash execution suite
@@ -351,8 +350,8 @@ mohit/
 # 1. Activate conda environment
 conda activate torch
 
-# 2. Run the complete reproduction pipeline from mohit/code
-cd /home/Stark/eurosat-min-params/mohit/code
+# 2. Run the complete reproduction pipeline from code/
+cd /home/Stark/eurosat-300-params/code
 bash reproduce.sh
 
 # 3. Regenerate all publication figures
