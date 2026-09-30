@@ -18,14 +18,14 @@ In [Solving EuroSAT with as Few Parameters as Possible](https://geospatialml.com
 
 We find that it can be beaten. We present two solutions that break the 306-parameter barrier:
 
-| Model Configuration | Input Features ($F$) | Stored Parameters | Inference Architecture | Test Accuracy | Status vs. 96.04% |
+| Model Configuration | Input Features ($F$) | Stored Parameters | Inference Architecture | Test Accuracy | vs. 96.04% |
 |---|---|---|---|---|---|
-| **Author Baseline** | 33 | 306 | 1 Affine Map ($\mathbf{x} W^T + \mathbf{b}$) | 96.04% | Baseline |
-| **297-Parameter Folded Affine** | 32 | **297** | 1 Affine Map ($\mathbf{x} W^T + \mathbf{b}$) | **96.19%** | **+0.15%** |
-| **297-Parameter Yeo-Johnson** | 32 | 297* | Yeo-Johnson + Linear Head | **96.25%** | **+0.21%** |
-| **270-Parameter Yeo-Johnson** | 29 | 270* | Yeo-Johnson + Linear Head | **96.06%** | **+0.02%** |
+| **Author Baseline** | 33 | 306 | Affine ($\mathbf{x} W^T + \mathbf{b}$) | 96.04% | Baseline |
+| **Folded Affine** | 32 | **297** | Affine ($\mathbf{x} W^T + \mathbf{b}$) | **96.19%** | **+0.15%** |
+| **Yeo-Johnson** | 32 | **329** (297 classifier + 32 λ) | Yeo-Johnson + Affine | **96.25%** | +0.21% |
+| **Yeo-Johnson** | 29 | **299** (270 classifier + 29 λ) | Yeo-Johnson + Affine | **96.06%** | +0.02% |
 
-*\* The Folded Affine model stores exactly 297 numbers with no extra operations at inference. The Yeo-Johnson model additionally stores 32 power exponents (329 total values).*
+*Only the Folded Affine model (297 parameters) is a strict drop-in replacement under the authors' single affine map rule.*
 
 ### Why Greedy Elimination Stopped at 33 Features
 The authors used greedy backward elimination from 33 features down to 20. At the $33 \to 32$ step, cross-validation dropped `grad_mean_B05`, causing test accuracy to fall to 95.89%. They concluded that 33 was the minimal feature set above 96.00%.
@@ -232,11 +232,13 @@ The scalar $\hat{\lambda}_j$ was estimated by maximizing profile log-likelihood 
 2. **33 Features (306 Classifier Parameters)**: Swapping `grad_mean_B05` for `p10_B08` reaches **96.27% test accuracy** (peak single seed: **96.28%**).
 3. **29 Features (270 Classifier Parameters)**: Retaining 29 features under Yeo-Johnson achieves **96.06% test accuracy**.
 
-#### Parameter Accounting Caveat:
-Because $\psi(\lambda, x)$ is a non-linear power function, it cannot be linearly folded into $W$ and $b$. Deploying this model requires storing 32 $\lambda$ exponents:
-$$297 \text{ (classifier)} + 32 \text{ (power exponents)} = \mathbf{329 \text{ total values}}$$
+#### Parameter Accounting:
+Because $\psi(\lambda, x)$ is a non-linear power function, it cannot be linearly folded into $W$ and $b$. Deploying this model requires storing one $\lambda$ exponent per feature:
 
-If strict compliance with the single affine map rule is required, Path A (96.19% with strictly 297 parameters) is the compliant solution.
+- 32 features: $297 \text{ (classifier)} + 32 \text{ (λ exponents)} = \mathbf{329 \text{ total values}}$
+- 29 features: $270 \text{ (classifier)} + 29 \text{ (λ exponents)} = \mathbf{299 \text{ total values}}$
+
+If the single affine map rule is required, the Folded Affine model (96.19%, 297 parameters) is the compliant solution.
 
 ---
 
