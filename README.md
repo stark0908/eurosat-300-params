@@ -3,6 +3,7 @@
 - **Author**: Stark
 - **Date**: September 2026
 - **Original Research & Challenge**: Caleb Robinson, Isaac Corley, and Nils Lehmann ([Blog Post](https://geospatialml.com/posts/eurosat-min-params/) | [GitHub Repository](https://github.com/calebrob6/eurosat-min-params))
+- **This Work**: [Blog Post](https://stark0908.github.io/Mohit/viewer.html?type=posts&file=eurosat-297-params)
 - **Code Suite**: [`code/`](./code/)
 - **Evaluation Logs**: [`results/`](./results/)
 - **Figures**: [`figures/`](./figures/)
